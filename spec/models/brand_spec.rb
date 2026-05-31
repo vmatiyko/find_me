@@ -24,6 +24,23 @@ RSpec.describe Brand, type: :model do
     end
   end
 
+  describe "normalization" do
+    it "normalizes name before validation" do
+      brand = build(:brand, name: " Test ACME Brand ")
+
+      brand.validate
+
+      expect(brand.name).to eq("acmebrand")
+    end
+
+    it "rejects names that normalize to blank" do
+      brand = build(:brand, name: " Test ")
+
+      expect(brand).not_to be_valid
+      expect(brand.errors[:name]).to include("can't be blank")
+    end
+  end
+
   describe "users_count" do
     it "defaults to zero and cannot be null" do
       column = described_class.columns_hash.fetch("users_count")
