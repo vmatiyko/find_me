@@ -22,6 +22,23 @@ RSpec.describe Brand, type: :model do
       expect(duplicate_brand).not_to be_valid
       expect(duplicate_brand.errors[:name]).to include("has already been taken")
     end
+
+    it "rejects case-insensitive duplicate names at the database layer" do
+      create(:brand, name: "Apple")
+      timestamp = Time.current
+
+      expect do
+        described_class.insert_all!(
+          [
+            {
+              name: "apple",
+              created_at: timestamp,
+              updated_at: timestamp
+            }
+          ]
+        )
+      end.to raise_error(ActiveRecord::RecordNotUnique)
+    end
   end
 
   describe "normalization" do

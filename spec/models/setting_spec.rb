@@ -13,6 +13,14 @@ RSpec.describe Setting, type: :model do
   describe "validations" do
     it { is_expected.to validate_presence_of(:key) }
     it { is_expected.to validate_uniqueness_of(:user_id).scoped_to(:brand_id) }
+
+    it "allows the same user to have one setting for each brand" do
+      user = create(:user)
+      create(:setting, user: user)
+      setting_for_another_brand = build(:setting, user: user)
+
+      expect(setting_for_another_brand).to be_valid
+    end
   end
 
   describe "database constraints" do

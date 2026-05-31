@@ -16,6 +16,25 @@ RSpec.describe User, type: :model do
     it { is_expected.to validate_presence_of(:last_name) }
     it { is_expected.to validate_presence_of(:email) }
     it { is_expected.to validate_uniqueness_of(:email).case_insensitive }
+
+    it "rejects case-insensitive duplicate emails at the database layer" do
+      create(:user, email: "person@example.com")
+      timestamp = Time.current
+
+      expect do
+        described_class.insert_all!(
+          [
+            {
+              first_name: "ada",
+              last_name: "lovelace",
+              email: "PERSON@example.com",
+              created_at: timestamp,
+              updated_at: timestamp
+            }
+          ]
+        )
+      end.to raise_error(ActiveRecord::RecordNotUnique)
+    end
   end
 
   describe "normalization" do

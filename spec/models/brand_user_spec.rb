@@ -76,11 +76,31 @@ RSpec.describe BrandUser, type: :model do
       expect(setting.value).to eq("")
     end
 
+    it "does not create a duplicate setting when one already exists for the pair" do
+      brand = create(:brand)
+      user = create(:user)
+      create(:setting, brand: brand, user: user)
+
+      expect { create(:brand_user, brand: brand, user: user) }
+        .not_to change(Setting, :count)
+    end
+
     it "destroys the setting when the brand-user pair is destroyed" do
       brand_user = create(:brand_user)
 
       expect { brand_user.destroy! }
         .to change(Setting, :count).by(-1)
+    end
+
+    it "keeps settings for the same user on other brands" do
+      user = create(:user)
+      brand_user = create(:brand_user, user: user)
+      other_brand_user = create(:brand_user, user: user)
+
+      expect { brand_user.destroy! }
+        .to change(Setting, :count).by(-1)
+
+      expect(Setting.exists?(brand: other_brand_user.brand, user: user)).to be(true)
     end
   end
 end

@@ -1,31 +1,140 @@
-.container
-  .row
+.container.py-4
+  .row.mb-4
     .col
-      .card
-        .card-body
-          .card-title
-            %h1 Task
+      .d-flex.flex-column.flex-md-row.justify-content-between.align-items-md-end.gap-3
+        %div
+          %p.text-uppercase.text-muted.fw-semibold.mb-1 Brand management
+          %h1.display-6.mb-1 Brand dashboard
+          %p.text-muted.mb-0 Manage brands, users, and generated settings in one place.
+        .text-md-end
+          %span.badge.text-bg-primary.fs-6
+            = pluralize(@brand.users_count, "user")
+          %p.text-muted.small.mb-0 Current brand: #{@brand.name}
 
-            %p
-              Try to find bug in brand model.
-            %p
-              Add new column to brand:
-              %b users_count
-            %p
-              Brand require two new models.
-            %p
-              First model is setting. Brand has many settings. Model should have this fields:
-              %b key, value
-            %p
-              Second model is users. Brand has multiple users. Users have multiple brands. Model should have this fields:
-              %b first_name, last_name, email
-            %p
-              UPD: each user should have one sitting record for each brand.
-            %p
-              brand name, user first_name, user last_name, user email should be saved without spaces, in down case. If any field include "test" this part should be cutted.
-            %p
-              On root page add input with brand name. Allow change brand name with autosave.
-            %p
-              Add ability to create/destroy new users for brand. Update users_count field.
-            %p
-              %b You must use only existing dependencies.
+  - flash.each do |type, message|
+    - alert_class = type.to_s == "notice" ? "alert-success" : "alert-danger"
+    .alert.alert-dismissible.fade.show{ class: alert_class, role: "alert" }
+      = message
+      %button.btn-close{ type: "button", data: { bs_dismiss: "alert" }, aria: { label: "Close" } }
+
+  .row.g-4
+    .col-lg-4
+      .card.shadow-sm.h-100
+        .card-header.bg-white
+          %h2.h5.mb-0 All Brands
+        .list-group.list-group-flush
+          - @brands.each do |brand|
+            - active_class = brand == @brand ? "active" : ""
+            = link_to root_path(brand_id: brand.id), class: "list-group-item list-group-item-action #{active_class}" do
+              .d-flex.justify-content-between.align-items-center
+                %span.fw-semibold= brand.name
+                %span.badge{ class: brand == @brand ? "text-bg-light" : "text-bg-secondary" }
+                  = brand.users_count
+              %small{ class: brand == @brand ? "text-white-50" : "text-muted" }
+                = pluralize(brand.users_count, "user")
+
+    .col-lg-8
+      .card.shadow-sm.mb-4
+        .card-header.bg-white.d-flex.justify-content-between.align-items-center
+          %h2.h5.mb-0 Brand Settings
+          %span.text-muted.small Autosaves after typing
+        .card-body
+          = form_with model: @brand, data: { controller: "autosave", autosave_url_value: brand_path(@brand), action: "submit->autosave#submit" } do |form|
+            .mb-3
+              = form.label :name, "Brand name", class: "form-label fw-semibold"
+              = form.text_field :name,
+                class: "form-control form-control-lg",
+                autocomplete: "off",
+                data: { autosave_target: "field", action: "input->autosave#save blur->autosave#saveNow" }
+            .small.text-muted{ data: { autosave_target: "status" } }
+              Saved
+
+  .row.g-4.mt-1
+    .col-xl-8
+      .card.shadow-sm.h-100
+        .card-header.bg-white.d-flex.flex-column.flex-md-row.justify-content-between.align-items-md-center.gap-2
+          %div
+            %h2.h5.mb-1 Brand Users
+            %p.text-muted.small.mb-0 Add users to this brand. The counter cache updates through the model.
+          %span.badge.text-bg-light.border
+            Users count: #{@brand.users_count}
+        .card-body
+          = form_with model: [@brand, @new_user], class: "mb-4", data: { turbo: false } do |form|
+            .row.g-3.align-items-end
+              .col-md-3
+                = form.label :first_name, "First name", class: "form-label"
+                = form.text_field :first_name, class: "form-control", required: true, autocomplete: "given-name"
+              .col-md-3
+                = form.label :last_name, "Last name", class: "form-label"
+                = form.text_field :last_name, class: "form-control", required: true, autocomplete: "family-name"
+              .col-md-4
+                = form.label :email, "Email", class: "form-label"
+                = form.email_field :email, class: "form-control", required: true, autocomplete: "email"
+              .col-md-2
+                = form.submit "Add user", class: "btn btn-primary w-100"
+
+          - if @brand_users.any?
+            .table-responsive
+              %table.table.table-sm.align-middle.mb-0
+                %thead.table-light
+                  %tr
+                    %th Name
+                    %th Email
+                    %th.text-end Action
+                %tbody
+                  - @brand_users.each do |brand_user|
+                    - user = brand_user.user
+                    %tr
+                      %td
+                        %strong= "#{user.first_name} #{user.last_name}"
+                      %td.text-muted= user.email
+                      %td.text-end
+                        = button_to "Remove", brand_user_path(@brand, user), method: :delete, class: "btn btn-outline-danger btn-sm", form: { data: { turbo: false } }
+          - else
+            .border.rounded-3.p-4.text-center.text-muted.bg-light
+              No users have been added to this brand yet.
+
+    .col-xl-4
+      .card.shadow-sm.h-100
+        .card-header.bg-white
+          %h2.h5.mb-0 Settings
+        .card-body
+          %p.text-muted.small
+            Settings are generated per brand-user pair, so this list is a useful integrity check.
+          - if @settings.any?
+            .list-group.list-group-flush
+              - @settings.each do |setting|
+                .list-group-item.px-0
+                  .d-flex.justify-content-between.align-items-start.gap-3
+                    %div
+                      %span.badge.text-bg-secondary= setting.key
+                      %p.mb-0.mt-2
+                        %strong User:
+                        = setting.user.email
+                    %code.small= setting.value.presence || "empty"
+          - else
+            .border.rounded-3.p-4.text-center.text-muted.bg-light
+              No settings exist for this brand yet.
+
+  .row.mt-4
+    .col
+      %details.card.shadow-sm
+        %summary.card-header.bg-white.fw-semibold Task brief
+        .card-body.small.text-muted
+          %p Try to find bug in brand model.
+          %p
+            Add new column to brand:
+            %strong users_count
+          %p Brand require two new models.
+          %p
+            First model is setting. Brand has many settings. Model should have this fields:
+            %strong key, value
+          %p
+            Second model is users. Brand has multiple users. Users have multiple brands. Model should have this fields:
+            %strong first_name, last_name, email
+          %p UPD: each user should have one sitting record for each brand.
+          %p brand name, user first_name, user last_name, user email should be saved without spaces, in down case. If any field include "test" this part should be cutted.
+          %p On root page add input with brand name. Allow change brand name with autosave.
+          %p Add ability to create/destroy new users for brand. Update users_count field.
+          %p.mb-0
+            %strong You must use only existing dependencies.
