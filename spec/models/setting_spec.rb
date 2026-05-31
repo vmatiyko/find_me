@@ -7,11 +7,34 @@ RSpec.describe Setting, type: :model do
 
   describe "associations" do
     it { is_expected.to belong_to(:brand) }
+    it { is_expected.to belong_to(:user) }
   end
 
   describe "validations" do
     it { is_expected.to validate_presence_of(:key) }
-    it { is_expected.to validate_uniqueness_of(:key).scoped_to(:brand_id) }
+    it { is_expected.to validate_uniqueness_of(:user_id).scoped_to(:brand_id) }
+  end
+
+  describe "database constraints" do
+    it "rejects duplicate settings for the same brand-user pair" do
+      brand_user = create(:brand_user)
+      timestamp = Time.current
+
+      expect do
+        described_class.insert_all!(
+          [
+            {
+              brand_id: brand_user.brand_id,
+              user_id: brand_user.user_id,
+              key: "custom",
+              value: "enabled",
+              created_at: timestamp,
+              updated_at: timestamp
+            }
+          ]
+        )
+      end.to raise_error(ActiveRecord::RecordNotUnique)
+    end
   end
 
   describe "value" do

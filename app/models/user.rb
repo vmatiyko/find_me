@@ -3,6 +3,7 @@ class User < ApplicationRecord
 
   has_many :brand_users, dependent: :destroy
   has_many :brands, through: :brand_users
+  has_many :settings, dependent: :destroy
 
   normalizes_text_fields :first_name, :last_name, :email
 

@@ -60,4 +60,27 @@ RSpec.describe BrandUser, type: :model do
         .to change { brand.reload.users_count }.by(-1)
     end
   end
+
+  describe "default setting" do
+    it "creates one setting for the brand-user pair" do
+      expect { create(:brand_user) }
+        .to change(Setting, :count).by(1)
+    end
+
+    it "creates the setting for the correct brand and user" do
+      brand_user = create(:brand_user)
+
+      setting = Setting.find_by!(brand: brand_user.brand, user: brand_user.user)
+
+      expect(setting.key).to eq("default")
+      expect(setting.value).to eq("")
+    end
+
+    it "destroys the setting when the brand-user pair is destroyed" do
+      brand_user = create(:brand_user)
+
+      expect { brand_user.destroy! }
+        .to change(Setting, :count).by(-1)
+    end
+  end
 end
