@@ -17,4 +17,14 @@ RSpec.describe Brand, type: :model do
       expect(duplicate_brand.errors[:name]).to include("has already been taken")
     end
   end
+
+  describe "users_count" do
+    it "defaults to zero and cannot be null" do
+      column = described_class.columns_hash.fetch("users_count")
+
+      expect(column.null).to be(false)
+      expect(column.default.to_i).to eq(0)
+      expect(build(:brand).users_count).to eq(0)
+    end
+  end
 end
