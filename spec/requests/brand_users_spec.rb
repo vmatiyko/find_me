@@ -3,12 +3,13 @@
 require "rails_helper"
 
 RSpec.describe "Brand users", type: :request do
-  describe "POST /brands/:brand_id/users" do
+  describe "POST /users" do
     it "creates a normalized user and associates it with the brand" do
       brand = create(:brand)
 
       expect do
-        post brand_users_path(brand), params: {
+        post users_path, params: {
+          brand_id: brand.id,
           user: {
             first_name: " Test Ada ",
             last_name: " Lovelace ",
@@ -26,7 +27,7 @@ RSpec.describe "Brand users", type: :request do
       expect(user.first_name).to eq("ada")
       expect(user.last_name).to eq("lovelace")
       expect(user.email).to eq("ada@example.com")
-      expect(Setting.find_by!(brand: brand, user: user).key).to eq("default")
+      expect(brand.brand_users.find_by!(user: user).setting.key).to eq("default")
     end
 
     it "reuses an existing user by normalized email" do
@@ -34,7 +35,8 @@ RSpec.describe "Brand users", type: :request do
       existing_user = create(:user, email: "ada@example.com")
 
       expect do
-        post brand_users_path(brand), params: {
+        post users_path, params: {
+          brand_id: brand.id,
           user: {
             first_name: "Different",
             last_name: "Name",
@@ -58,7 +60,8 @@ RSpec.describe "Brand users", type: :request do
         users_count: brand.users_count
       }
 
-      post brand_users_path(brand), params: {
+      post users_path, params: {
+        brand_id: brand.id,
         user: {
           first_name: "test",
           last_name: "test",
@@ -86,7 +89,8 @@ RSpec.describe "Brand users", type: :request do
         users_count: brand.users_count
       }
 
-      post brand_users_path(brand), params: {
+      post users_path, params: {
+        brand_id: brand.id,
         user: {
           first_name: user.first_name,
           last_name: user.last_name,
@@ -106,7 +110,8 @@ RSpec.describe "Brand users", type: :request do
     it "renders a single dashboard after redirecting from create" do
       brand = create(:brand)
 
-      post brand_users_path(brand), params: {
+      post users_path, params: {
+        brand_id: brand.id,
         user: {
           first_name: "Grace",
           last_name: "Hopper",
@@ -121,14 +126,14 @@ RSpec.describe "Brand users", type: :request do
     end
   end
 
-  describe "DELETE /brands/:brand_id/users/:id" do
+  describe "DELETE /users/:id" do
     it "removes the user from the brand and decrements users_count" do
       brand_user = create(:brand_user)
       brand = brand_user.brand
       user = brand_user.user
 
       expect do
-        delete brand_user_path(brand, user)
+        delete user_path(user, brand_id: brand.id)
       end.to change(BrandUser, :count).by(-1)
         .and change { brand.reload.users_count }.by(-1)
         .and change(Setting, :count).by(-1)
@@ -146,14 +151,14 @@ RSpec.describe "Brand users", type: :request do
       create(:brand_user, brand: other_brand, user: user)
 
       expect do
-        delete brand_user_path(brand, user)
+        delete user_path(user, brand_id: brand.id)
       end.not_to change(User, :count)
 
       expect(response).to have_http_status(303)
       expect(response).to redirect_to(root_path(brand_id: brand.id))
       expect(user.reload.brands).not_to include(brand)
       expect(user.brands).to include(other_brand)
-      expect(Setting.exists?(brand: other_brand, user: user)).to be(true)
+      expect(other_brand.brand_users.find_by!(user: user).setting).to be_present
     end
   end
 end

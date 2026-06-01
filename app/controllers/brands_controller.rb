@@ -1,15 +1,11 @@
 class BrandsController < BaseController
   def update
-    brand = Brand.find(params[:id])
+    result = UpdateBrand.result(brand_id: params[:id], attributes: brand_params)
 
-    if brand.update(brand_params)
-      render json: {
-        id: brand.id,
-        name: brand.name,
-        users_count: brand.users_count
-      }
+    if result.success?
+      render json: result.brand.as_json(only: %i[id name users_count])
     else
-      render json: { errors: brand.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: result.error_messages }, status: :unprocessable_entity
     end
   end
 

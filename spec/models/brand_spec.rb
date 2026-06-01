@@ -6,9 +6,9 @@ RSpec.describe Brand, type: :model do
   subject(:brand) { build(:brand) }
 
   describe "associations" do
-    it { is_expected.to have_many(:settings).dependent(:destroy) }
     it { is_expected.to have_many(:brand_users).dependent(:destroy) }
     it { is_expected.to have_many(:users).through(:brand_users) }
+    it { is_expected.to have_many(:settings).through(:brand_users) }
   end
 
   describe "validations" do

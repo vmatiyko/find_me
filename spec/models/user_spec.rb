@@ -8,7 +8,7 @@ RSpec.describe User, type: :model do
   describe "associations" do
     it { is_expected.to have_many(:brand_users).dependent(:destroy) }
     it { is_expected.to have_many(:brands).through(:brand_users) }
-    it { is_expected.to have_many(:settings).dependent(:destroy) }
+    it { is_expected.to have_many(:settings).through(:brand_users) }
   end
 
   describe "validations" do
@@ -16,6 +16,13 @@ RSpec.describe User, type: :model do
     it { is_expected.to validate_presence_of(:last_name) }
     it { is_expected.to validate_presence_of(:email) }
     it { is_expected.to validate_uniqueness_of(:email).case_insensitive }
+
+    it "validates email format using the installed email_validator gem" do
+      user = build(:user, email: "not-an-email")
+
+      expect(user).not_to be_valid
+      expect(user.errors[:email]).to include("is invalid")
+    end
 
     it "rejects case-insensitive duplicate emails at the database layer" do
       create(:user, email: "person@example.com")

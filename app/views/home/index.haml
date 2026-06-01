@@ -1,21 +1,6 @@
 .container.py-4
-  .row.mb-4
-    .col
-      .d-flex.flex-column.flex-md-row.justify-content-between.align-items-md-end.gap-3
-        %div
-          %p.text-uppercase.text-muted.fw-semibold.mb-1 Brand management
-          %h1.display-6.mb-1 Brand dashboard
-          %p.text-muted.mb-0 Manage brands, users, and generated settings in one place.
-        .text-md-end
-          %span.badge.text-bg-primary.fs-6
-            = pluralize(@brand.users_count, "user")
-          %p.text-muted.small.mb-0 Current brand: #{@brand.name}
-
-  - flash.each do |type, message|
-    - alert_class = type.to_s == "notice" ? "alert-success" : "alert-danger"
-    .alert.alert-dismissible.fade.show{ class: alert_class, role: "alert" }
-      = message
-      %button.btn-close{ type: "button", data: { bs_dismiss: "alert" }, aria: { label: "Close" } }
+  = render "dashboard_header", brand: @brand
+  = render "flash_messages", flash: flash
 
   .row.g-4
     .col-lg-4
@@ -24,13 +9,12 @@
           %h2.h5.mb-0 All Brands
         .list-group.list-group-flush
           - @brands.each do |brand|
-            - active_class = brand == @brand ? "active" : ""
-            = link_to root_path(brand_id: brand.id), class: "list-group-item list-group-item-action #{active_class}" do
+            = link_to root_path(brand_id: brand.id), class: brand_nav_link_class(brand, @brand) do
               .d-flex.justify-content-between.align-items-center
                 %span.fw-semibold= brand.name
-                %span.badge{ class: brand == @brand ? "text-bg-light" : "text-bg-secondary" }
+                %span.badge{ class: brand_nav_badge_class(brand, @brand) }
                   = brand.users_count
-              %small{ class: brand == @brand ? "text-white-50" : "text-muted" }
+              %small{ class: brand_nav_user_count_class(brand, @brand) }
                 = pluralize(brand.users_count, "user")
 
     .col-lg-8
@@ -59,7 +43,8 @@
           %span.badge.text-bg-light.border
             Users count: #{@brand.users_count}
         .card-body
-          = form_with model: [@brand, @new_user], class: "mb-4", data: { turbo: false } do |form|
+          = form_with model: @new_user, url: users_path, class: "mb-4", data: { turbo: false } do |form|
+            = hidden_field_tag :brand_id, @brand.id
             .row.g-3.align-items-end
               .col-md-3
                 = form.label :first_name, "First name", class: "form-label"
@@ -89,7 +74,7 @@
                         %strong= "#{user.first_name} #{user.last_name}"
                       %td.text-muted= user.email
                       %td.text-end
-                        = button_to "Remove", brand_user_path(@brand, user), method: :delete, class: "btn btn-outline-danger btn-sm", form: { data: { turbo: false } }
+                        = button_to "Remove", user_path(user, brand_id: @brand.id), method: :delete, class: "btn btn-outline-danger btn-sm", form: { data: { turbo: false } }
           - else
             .border.rounded-3.p-4.text-center.text-muted.bg-light
               No users have been added to this brand yet.

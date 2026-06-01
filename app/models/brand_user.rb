@@ -1,22 +1,15 @@
 class BrandUser < ApplicationRecord
   belongs_to :brand, counter_cache: :users_count
   belongs_to :user
+  has_one :setting, dependent: :destroy, inverse_of: :brand_user, autosave: true
 
-  after_create :create_default_setting
-  after_destroy :destroy_default_setting
+  before_validation :build_default_setting, on: :create
 
   validates :user_id, uniqueness: { scope: :brand_id }
 
   private
 
-  def create_default_setting
-    Setting.find_or_create_by!(brand: brand, user: user) do |setting|
-      setting.key = "default"
-      setting.value = ""
-    end
-  end
-
-  def destroy_default_setting
-    Setting.find_by(brand: brand, user: user)&.destroy!
+  def build_default_setting
+    build_setting(key: "default", value: "") unless setting
   end
 end

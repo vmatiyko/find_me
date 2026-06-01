@@ -43,7 +43,7 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include(user.last_name)
       expect(response.body).to include(user.email)
       expect(response.body).to include("Remove")
-      expect(response.body).to include(brand_user_path(brand, user))
+      expect(response.body).to include(user_path(user, brand_id: brand.id).gsub("&", "&amp;"))
       expect(response.body).to include("data-turbo=\"false\"")
     end
 

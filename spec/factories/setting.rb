@@ -1,7 +1,6 @@
 FactoryBot.define do
   factory :setting do
-    association :brand
-    association :user
+    brand_user { build(:brand_user) }
     key { "notification_email" }
     value { "enabled" }
   end

@@ -8,6 +8,7 @@ RSpec.describe BrandUser, type: :model do
   describe "associations" do
     it { is_expected.to belong_to(:brand).counter_cache(:users_count) }
     it { is_expected.to belong_to(:user) }
+    it { is_expected.to have_one(:setting).dependent(:destroy) }
   end
 
   describe "validations" do
@@ -70,19 +71,13 @@ RSpec.describe BrandUser, type: :model do
     it "creates the setting for the correct brand and user" do
       brand_user = create(:brand_user)
 
-      setting = Setting.find_by!(brand: brand_user.brand, user: brand_user.user)
+      setting = brand_user.setting
 
+      expect(setting.brand_user).to eq(brand_user)
+      expect(setting.brand).to eq(brand_user.brand)
+      expect(setting.user).to eq(brand_user.user)
       expect(setting.key).to eq("default")
       expect(setting.value).to eq("")
-    end
-
-    it "does not create a duplicate setting when one already exists for the pair" do
-      brand = create(:brand)
-      user = create(:user)
-      create(:setting, brand: brand, user: user)
-
-      expect { create(:brand_user, brand: brand, user: user) }
-        .not_to change(Setting, :count)
     end
 
     it "destroys the setting when the brand-user pair is destroyed" do
@@ -100,7 +95,7 @@ RSpec.describe BrandUser, type: :model do
       expect { brand_user.destroy! }
         .to change(Setting, :count).by(-1)
 
-      expect(Setting.exists?(brand: other_brand_user.brand, user: user)).to be(true)
+      expect(other_brand_user.reload.setting).to be_present
     end
   end
 end
